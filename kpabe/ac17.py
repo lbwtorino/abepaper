@@ -32,7 +32,14 @@ class AC17CPABE(ABEnc):
         """
         Generates public key and master secret key.
         """
-
+        input_for_hash = str(111) + str(222)
+        num = int(self.group.random(ZR))
+        hashed_value = int(self.group.hash(input_for_hash, ZR))
+        res = num ^ hashed_value
+        print(input_for_hash)
+        print(num, type(num))
+        print(hashed_value, type(hashed_value))
+        print(res, type(res))
         if debug:
             print('\nSetup algorithm:\n')
 
@@ -154,7 +161,7 @@ class AC17CPABE(ABEnc):
         policy = self.util.createPolicy(policy_str)
         # Convert a policy into a monotone span program (MSP) represented by a dictionary with (attribute, row) pairs
         mono_span_prog = self.util.convert_policy_to_msp(policy)
-        print(mono_span_prog)
+        # print(mono_span_prog)
         # self.len_longest_row = 1
         num_cols = self.util.len_longest_row
         # print(policy)
@@ -197,7 +204,7 @@ class AC17CPABE(ABEnc):
 
         C = {}
         for attr, row in mono_span_prog.items():
-            print(attr, row)
+            # print(attr, row)
             ct = []
             # Remove the index from an attribute (i.e., x_y -> x).
             attr_stripped = self.util.strip_index(attr)  # no need, re-use not allowed

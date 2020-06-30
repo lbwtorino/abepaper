@@ -41,7 +41,7 @@ def main():
             print ("Successful decryption.")
         else:
             print ("Decryption failed.")
-
+    
 
 if __name__ == "__main__":
     debug = True
