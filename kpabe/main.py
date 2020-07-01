@@ -25,7 +25,11 @@ def main():
     ct = scheme.encrypt(mpk, msk, m, attri_list)
 
     res = scheme.decrypt(mpk, sk, ct, m)
-    print(res)
+    if res == True:
+        print("Successful Decryption :)")
+    else:
+        print("Failed Decryption :(")
+    # print(res)
 
     # curve = 'MNT224'
     # groupObj = PairingGroup(curve)

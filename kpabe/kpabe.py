@@ -38,11 +38,13 @@ class KPABE(ABEnc):
         for i in a_list:
             # remove index, only return attribute name
             inti = int(util.strip_index(i)) #NOTICE THE CONVERSION FROM STRING TO INT
+            print(type(inti))
             ri = group.random(ZR)
             # compute K_(Tau,0)
             K0[i] = pp['g2']**shares[i] * pp['w']**ri
             # compute K_(Tau,1)
             rho_i = group.init(ZR, inti)
+            print(rho_i)
             K1[i] = (pp['u']**rho_i * pp['h'])**(-ri)
             # compute K_(Tau,2)
             K2[i] = pp['g']**ri

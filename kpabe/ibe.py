@@ -14,7 +14,7 @@ class KPIBE(ABEnc):
         self.index_j = 5
 
     def setup(self):
-        # g, u, h, w
+        # g, u, v, w, h
         # G2 --> H, G1 --> G
         h = group.random(G2)
         g, u, v, w = group.random(G1), group.random(G1), group.random(G1), group.random(G1)
@@ -76,6 +76,11 @@ class KPIBE(ABEnc):
         # sk_0
         sk_0 = {}
         sum_t, sum_r = sum(t), sum(r)
+        ttt = 0
+        for i in t:
+            ttt += i
+        sum_t = group.init(ZR, sum_t)
+        sum_r = group.init(ZR, sum_r)
         g_t_alpha = mpk['g']**(sum_t/msk['alpha'])
         g_r = mpk['g']**sum_r
         sk_0['g_t_alpha'] = g_t_alpha
@@ -113,7 +118,9 @@ class KPIBE(ABEnc):
         input_for_hash = str(mpk['egg']**s) + str(pair(mpk['g'],mpk['h'])**(msk['theta'] * s / msk['alpha']))
         hashed_value = group.hash(input_for_hash, ZR)
         _ct = int(message) ^ int(hashed_value)
-        ct = group.init(ZR, _ct)
+        ct = group.init(ZR, int(_ct))
+        
+        # print(str(pair(mpk['g'],mpk['h'])**(msk['theta'] * s / msk['alpha'])))
         # ct_0
         ct_0 ={}
         ct_0['h_s'] = h**s
@@ -156,13 +163,27 @@ class KPIBE(ABEnc):
             B *= (pair(sk['SK1'][i], ct['ct_0']['h_s']) * pair(sk['SK2'][i], ct['CT1'][i]) * pair(ct['CT2'][i], sk['SK3'][i])) ** w[i]
     
         # A
+        # ct_0['h_s'] = h**s
+        # ct_0['h_s_alpha'] = h**(s/alpha)
+        # ct_0['h_beta_s_alpha'] = h**(beta*s/alpha)
+        # sk_0['g_t_alpha'] = g_t_alpha
+        # sk_0['g_r'] = g_r
         numerator = pair(sk['sk_1'], ct['ct_0']['h_s_alpha'])
         denominator = pair(sk['sk_0']['g_t_alpha'], ct['ct_1']) * pair(sk['sk_0']['g_r'], ct['ct_0']['h_beta_s_alpha'])
         A = numerator / denominator
+
+        # print(B)
+        # print(A)
 
         # check 
         input_for_hash = str(B) + str(A)
         hashed_value = group.hash(input_for_hash, ZR)
         result = int(ct['ct']) ^ int(hashed_value)
+        # print(str(B))
+        # print(str(A))
+        # print(input_for_hash)
+        # print(message)
+        # print(ct['ct'])
+        # print(hashed_value)
 
         return (int(message) == int(result))
