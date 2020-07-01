@@ -11,7 +11,7 @@ def main():
 
     curve = 'MNT224'
     groupObj = PairingGroup(curve)
-    scheme = KPABE(groupObj)
+    scheme = KPIBE(groupObj)
 
     (mpk, msk) = scheme.setup()
 
@@ -22,15 +22,10 @@ def main():
     m = groupObj.random(ZR)
     attri_list = {'123', '842',  '231', '384'}
     # attri_list = {'1', '2',  '3'}
-    ct = scheme.encrypt(mpk, m, attri_list)
+    ct = scheme.encrypt(mpk, msk, m, attri_list)
 
-    res = scheme.decrypt(mpk, sk, ct)
-
-    if res == m:
-        fin = "Successful Decryption :)"
-    else:
-        fin = "Failed Decryption :("
-    print(fin)
+    res = scheme.decrypt(mpk, sk, ct, m)
+    print(res)
 
     # curve = 'MNT224'
     # groupObj = PairingGroup(curve)

@@ -14,23 +14,23 @@ class KPIBE(ABEnc):
         self.index_j = 5
 
     def setup(self):
-        # g, u, h, w, e(g, g)^alpha
+        # g, u, h, w
         # G2 --> H, G1 --> G
         h = group.random(G2)
         g, u, v, w = group.random(G1), group.random(G1), group.random(G1), group.random(G1)
-        egg = pair(g,h)**alpha
-        # alpha, beta, theta, 
+        # alpha, beta, theta, e(g, g)^alpha
         alpha = group.random(ZR)
         beta = group.random(ZR)
         theta = group.random(ZR)
+        egg = pair(g,h)**alpha
         # z_1,z_2......z_k, {g_1, g_2,....g_k}, and {h_1, h_2,....h_k}
         # {g1^alpha, g2^alpha,...gk^alpha}, and {h1^alpha, h2^alpha,...hk^alpha}
-        z = []
+        # z = []
         vector_g, vector_h, vector_g_alpha, vector_h_alpha = [], [], [], []
         for i in range(self.k):
-            z.append(group.random(ZR))
-            vector_g.append(g**z)
-            vector_h.append(h**z)
+            tmp = group.random(ZR)
+            vector_g.append(g**tmp)
+            vector_h.append(h**tmp)
             vector_g_alpha.append(vector_g[i]**alpha)
             vector_h_alpha.append(vector_h[i]**alpha)
         # g^beta, h^1/alpha, h^beta/alpha, egg^theta/alpha
@@ -94,7 +94,7 @@ class KPIBE(ABEnc):
 
 
 
-    def encrypt(self, mpk, message, attri_list):
+    def encrypt(self, mpk, msk, message, attri_list):
         s = group.random(ZR)	
         wS = mpk['w']**(-s)
         h, alpha, beta = mpk['h'], msk['alpha'], msk['beta']
@@ -112,7 +112,7 @@ class KPIBE(ABEnc):
         # ct
         input_for_hash = str(mpk['egg']**s) + str(pair(mpk['g'],mpk['h'])**(msk['theta'] * s / msk['alpha']))
         hashed_value = group.hash(input_for_hash, ZR)
-        _ct = int(R) ^ int(hashed_value)
+        _ct = int(message) ^ int(hashed_value)
         ct = group.init(ZR, _ct)
         # ct_0
         ct_0 ={}
@@ -124,16 +124,17 @@ class KPIBE(ABEnc):
         vector_j = 1
         for j in range(self.index_j):
             tmp = group.random(ZR)
-            vector_j *= mpk['vector_h_alpha'][self.k-1-i]**tmp
+            vector_j *= mpk['vector_h_alpha'][self.k-1-j]**tmp
             I.append(tmp)
         vector_j *= mpk['h']
+        ct_1 = vector_j**s
 
         #NOTICE THE CONVERSION FROM STRING TO INT
         #Have to be an array for util.prune
         # attri_list = [i for i in attri_list] 
         return { 'attri_list':attri_list, 'ct':ct, 'CT1':CT1, 'CT2':CT2, 'ct_0':ct_0, 'ct_1':ct_1} 
 
-    def decrypt(self, mpk, sk, ct):
+    def decrypt(self, mpk, sk, ct, message):
         # Convert a Boolean formula represented as a string into a policy represented like a tree
         policy = util.createPolicy(sk['Policy'])
         # compute w_i
@@ -152,10 +153,16 @@ class KPIBE(ABEnc):
             # compute i, I={i: rho(i) in attri_list}
             i = pruned_list[j].getAttributeAndIndex( ) #with the underscore
             # compute B
-            B *= (pair(sk['SK1'][i], ct['CT1'][0]) * pair(sk['SK2'][i], ct['CT1'][i]) * pair(ct['CT2'][i], sk['SK3'][i])) ** w[i]
+            B *= (pair(sk['SK1'][i], ct['ct_0']['h_s']) * pair(sk['SK2'][i], ct['CT1'][i]) * pair(ct['CT2'][i], sk['SK3'][i])) ** w[i]
     
         # A
-        numerator = pair(sk['sk_1'], ct['CT2'][0])
-        denominator = pair(sk['SK1'][0], ct['ct_1']) * pair(sk['SK2'][0], ct['ct_1'])
+        numerator = pair(sk['sk_1'], ct['ct_0']['h_s_alpha'])
+        denominator = pair(sk['sk_0']['g_t_alpha'], ct['ct_1']) * pair(sk['sk_0']['g_r'], ct['ct_0']['h_beta_s_alpha'])
+        A = numerator / denominator
 
-        # return ct['C'] / B 
+        # check 
+        input_for_hash = str(B) + str(A)
+        hashed_value = group.hash(input_for_hash, ZR)
+        result = int(ct['ct']) ^ int(hashed_value)
+
+        return (int(message) == int(result))
